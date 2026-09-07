@@ -1,7 +1,6 @@
-// api/analyze.js - Endpoint Vercel pour l'analyse initiale du PDF
+// api/analyze.js - Endpoint Vercel pour l'analyse du PDF
 
 export default async function handler(req, res) {
-  // 1. Uniquement les requêtes POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Méthode non autorisée.' });
   }
@@ -18,10 +17,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Le texte du document est vide.' });
     }
 
-    // 2. Choix du modèle avec stratégie de repli (fallback)
-    // Utilise la variable d'environnement GEMINI_MODEL si définie, sinon gemini-2.5-flash
     const primaryModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-    const fallbackModel = 'gemini-1.5-flash';
+    const fallbackModel = 'gemini-2.0-flash';
 
     const langInstruction = {
       fr: 'Rédige TOUT le contenu impérativement en FRANÇAIS.',
@@ -58,9 +55,8 @@ Structure JSON exacte attendue :
 Génère au moins 5 questions QCM et au moins 5 flashcards.
 N'ajoute aucun texte avant ou après le JSON.`;
 
-    // 3. Fonction d'appel à l'API Gemini REST
     const callGeminiAPI = async (modelName) => {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`;
       
       const payload = {
         contents: [
@@ -92,7 +88,6 @@ N'ajoute aucun texte avant ou après le JSON.`;
       return await response.json();
     };
 
-    // 4. Tentative avec le modèle principal, sinon tentative avec le modèle de secours
     let geminiResponse;
     try {
       geminiResponse = await callGeminiAPI(primaryModel);
@@ -101,7 +96,6 @@ N'ajoute aucun texte avant ou après le JSON.`;
       geminiResponse = await callGeminiAPI(fallbackModel);
     }
 
-    // 5. Extraction et nettoyage du JSON
     const rawContent = geminiResponse?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!rawContent) {
       throw new Error("L'IA n'a pas renvoyé de réponse exploitable.");
@@ -115,7 +109,6 @@ N'ajoute aucun texte avant ou après le JSON.`;
 
     const parsedData = JSON.parse(cleanedJson);
 
-    // 6. Réponse envoyée au client (structure identique à la V1)
     return res.status(200).json({
       resume: parsedData.resume || '',
       fiche: parsedData.fiche || '',
