@@ -61,6 +61,12 @@
     color: #666;
     text-align: center;
   }
+  .file-size {
+    margin-top: 4px;
+    font-size: 12px;
+    color: #999;
+    text-align: center;
+  }
   label.section-label {
     display: block;
     font-size: 14px;
@@ -88,6 +94,62 @@
     background: #eef0ff;
     color: #4f46e5;
   }
+  .analyze-btn {
+    display: none;
+    width: 100%;
+    padding: 16px;
+    margin-top: 16px;
+    background: #16a34a;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+  }
+  .analyze-btn:active { opacity: 0.85; }
+  .analyze-btn:disabled {
+    background: #9ca3af;
+    cursor: default;
+  }
+  .loading-box {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 16px;
+    font-size: 14px;
+    color: #4f46e5;
+    font-weight: 500;
+  }
+  .spinner {
+    width: 18px;
+    height: 18px;
+    border: 3px solid #e0e0e6;
+    border-top-color: #4f46e5;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  .status-box {
+    margin-top: 16px;
+    font-size: 13px;
+    color: #333;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 10px;
+    padding: 12px;
+    display: none;
+    line-height: 1.4;
+  }
+  .status-box.error {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #991b1b;
+  }
   .footer-note {
     font-size: 12px;
     color: #999;
@@ -106,6 +168,16 @@
     <label class="upload-btn" for="pdfInput">Choisir un fichier PDF</label>
     <input type="file" id="pdfInput" accept="application/pdf" />
     <div class="file-name" id="fileName">Aucun fichier sélectionné</div>
+    <div class="file-size" id="fileSize"></div>
+
+    <button class="analyze-btn" id="analyzeBtn">Analyser mon cours</button>
+
+    <div class="loading-box" id="loadingBox">
+      <div class="spinner"></div>
+      <span>Lecture du PDF en cours…</span>
+    </div>
+
+    <div class="status-box" id="statusBox"></div>
   </div>
 
   <div class="card">
@@ -117,15 +189,83 @@
     </div>
   </div>
 
-  <div class="footer-note">Version prototype — le traitement du PDF arrive bientôt.</div>
+  <div class="footer-note">Version prototype — la génération IA arrive bientôt.</div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
     const pdfInput = document.getElementById('pdfInput');
     const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const loadingBox = document.getElementById('loadingBox');
+    const statusBox = document.getElementById('statusBox');
+
+    let selectedFile = null;
+
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' o';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' Ko';
+      return (bytes / (1024 * 1024)).toFixed(2) + ' Mo';
+    }
+
     pdfInput.addEventListener('change', () => {
-      fileName.textContent = pdfInput.files.length
-        ? pdfInput.files[0].name
-        : 'Aucun fichier sélectionné';
+      statusBox.style.display = 'none';
+      statusBox.classList.remove('error');
+
+      if (pdfInput.files.length) {
+        selectedFile = pdfInput.files[0];
+        fileName.textContent = selectedFile.name;
+        fileSize.textContent = formatFileSize(selectedFile.size);
+        analyzeBtn.style.display = 'block';
+      } else {
+        selectedFile = null;
+        fileName.textContent = 'Aucun fichier sélectionné';
+        fileSize.textContent = '';
+        analyzeBtn.style.display = 'none';
+      }
+    });
+
+    analyzeBtn.addEventListener('click', async () => {
+      if (!selectedFile) return;
+
+      analyzeBtn.disabled = true;
+      loadingBox.style.display = 'flex';
+      statusBox.style.display = 'none';
+      statusBox.classList.remove('error');
+
+      try {
+        const arrayBuffer = await selectedFile.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          const pageText = content.items.map(item => item.str).join(' ');
+          fullText += pageText + '\n\n';
+        }
+
+        // Le texte extrait est prêt ici, dans la variable "fullText".
+        // Pour l'instant on affiche juste une confirmation (pas d'IA branchée).
+        const wordCount = fullText.trim().split(/\s+/).filter(Boolean).length;
+
+        statusBox.style.display = 'block';
+        statusBox.textContent =
+          `✅ PDF lu avec succès : ${pdf.numPages} page(s), environ ${wordCount} mots extraits. ` +
+          `Prêt pour l'étape suivante (génération du contenu).`;
+
+        window.studyPdfExtractedText = fullText; // stocké pour la prochaine étape
+      } catch (err) {
+        statusBox.style.display = 'block';
+        statusBox.classList.add('error');
+        statusBox.textContent = '❌ Erreur pendant la lecture du PDF : ' + err.message;
+      } finally {
+        analyzeBtn.disabled = false;
+        loadingBox.style.display = 'none';
+      }
     });
 
     const langButtons = document.querySelectorAll('.lang-btn');
