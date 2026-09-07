@@ -31,13 +31,13 @@
       <p class="mt-2 text-slate-600">Importe le PDF de ton cours pour générer résumé, fiche de révision, QCM et poser tes questions au Chat.</p>
     </div>
 
-    <!-- Drop Zone -->
-    <div id="dropZone" class="border-2 border-dashed border-slate-300 rounded-2xl bg-white p-8 text-center cursor-pointer hover:border-indigo-500 transition-colors">
+    <!-- Drop Zone avec Label HTML direct (Marche à 100% sur iPhone) -->
+    <label for="fileInput" id="dropZone" class="block border-2 border-dashed border-slate-300 rounded-2xl bg-white p-8 text-center cursor-pointer hover:border-indigo-500 transition-colors">
       <input type="file" id="fileInput" accept="application/pdf" class="hidden" />
       <div class="text-4xl mb-2">📄</div>
       <p class="font-semibold text-slate-700">Dépose ton PDF ici</p>
       <p class="text-xs text-slate-400 mt-1">ou appuie pour choisir un fichier</p>
-    </div>
+    </label>
 
     <!-- File Info Card -->
     <div id="fileInfoCard" class="hidden mt-4 bg-white rounded-2xl p-4 border border-slate-200">
