@@ -1,117 +1,132 @@
-module.exports = async function handler(req, res) {
+// api/analyze.js - Endpoint Vercel pour l'analyse initiale du PDF
+
+export default async function handler(req, res) {
+  // 1. Uniquement les requêtes POST
   if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Méthode non autorisée' });
-    return;
-  }
-
-  const { text, lang } = req.body || {};
-
-  if (!text || typeof text !== 'string' || text.trim().length < 20) {
-    res.status(400).json({ error: 'Texte du PDF manquant ou trop court.' });
-    return;
+    return res.status(405).json({ error: 'Méthode non autorisée.' });
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    res.status(500).json({ error: 'Clé API non configurée sur le serveur.' });
-    return;
+    return res.status(500).json({ error: 'Clé API Gemini non configurée sur le serveur.' });
   }
 
-  const langNames = { fr: 'français', ar: 'arabe standard', darija: 'darija marocain (arabe dialectal, transcrit en lettres arabes)' };
-  const langLabel = langNames[lang] || 'français';
+  try {
+    const { text, lang = 'fr' } = req.body;
 
-  // Limite de sécurité côté serveur (le client tronque déjà en amont,
-  // ceci est un filet de sécurité supplémentaire).
-  const MAX_CHARS = 40000;
-  const truncatedText = text.slice(0, MAX_CHARS);
+    if (!text || text.trim().length === 0) {
+      return res.status(400).json({ error: 'Le texte du document est vide.' });
+    }
 
-  const prompt = `Tu es un assistant pédagogique. Voici le texte extrait d'un cours (peut contenir des imperfections d'extraction) :
+    // 2. Choix du modèle avec stratégie de repli (fallback)
+    // Utilise la variable d'environnement GEMINI_MODEL si définie, sinon gemini-2.5-flash
+    const primaryModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    const fallbackModel = 'gemini-1.5-flash';
 
-"""
-${truncatedText}
-"""
+    const langInstruction = {
+      fr: 'Rédige TOUT le contenu impérativement en FRANÇAIS.',
+      ar: 'Rédige TOUT le contenu impérativement en ARABE classique.',
+      darija: 'Rédige TOUT le contenu impérativement en DARIJA marocain (en utilisant l’alphabet latin ou arabe, de manière claire et fluide).'
+    }[lang] || 'Rédige TOUT le contenu impérativement en FRANÇAIS.';
 
-Réponds UNIQUEMENT avec un objet JSON valide respectant exactement cette structure :
+    const systemPrompt = `Tu es un assistant pédagogique expert.
+Analyse le texte du cours ci-dessous et génère une réponse STRICTEMENT au format JSON valide, sans balises de code Markdown (\`\`\`json ... \`\`\`), uniquement du texte JSON brut.
 
+Consignes de langue :
+${langInstruction}
+
+Structure JSON exacte attendue :
 {
-  "resume": "un résumé clair et structuré du cours, en ${langLabel}",
-  "fiche": "une fiche de révision structurée avec les points clés, en ${langLabel}",
+  "resume": "Un résumé synthétique et structuré du cours.",
+  "fiche": "Une fiche de révision détaillée sous forme de points clés, définitions importantes et formules à retenir.",
   "qcm": [
-    { "question": "...", "options": ["...", "...", "...", "..."], "reponse": "...", "explication": "..." }
+    {
+      "question": "Texte de la question 1",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "reponse": "Option A",
+      "explication": "Explication rapide de la réponse correcte."
+    }
   ],
   "flashcards": [
-    { "question": "...", "reponse": "..." }
+    {
+      "question": "Question / Notion",
+      "reponse": "Explication / Réponse courte"
+    }
   ]
 }
 
-Génère exactement 10 éléments dans "qcm" et exactement 10 éléments dans "flashcards". Tout le contenu doit être en ${langLabel}.
+Génère au moins 5 questions QCM et au moins 5 flashcards.
+N'ajoute aucun texte avant ou après le JSON.`;
 
-Pour chaque élément de "qcm" :
-- "reponse" doit être recopiée EXACTEMENT telle qu'elle apparaît dans "options" (même texte, même formulation).
-- "explication" doit être une courte explication (1 à 2 phrases) de pourquoi cette réponse est correcte.
+    // 3. Fonction d'appel à l'API Gemini REST
+    const callGeminiAPI = async (modelName) => {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+      
+      const payload = {
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: systemPrompt },
+              { text: `\n\nCONTENU DU COURS :\n${text}` }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.3,
+          responseMimeType: 'application/json'
+        }
+      };
 
-RÈGLE IMPORTANTE POUR LES MATHÉMATIQUES :
-Chaque fois qu'une expression mathématique apparaît (formule, fraction, indice, exposant, racine, équation, symbole), tu dois l'écrire en notation LaTeX, jamais en texte brut. Cela s'applique aussi bien à "resume", "fiche", "question", "options", "reponse" qu'à "explication".
-- Pour une formule courte insérée dans une phrase : entoure-la de signes dollar simples, exemple : $x^2 + y^2 = z^2$
-- Pour une formule importante isolée : entoure-la de doubles signes dollar, exemple : $$c(t_{1/2}) = x_{max}$$
-- N'écris jamais une formule sous forme de texte brut comme "c(t1/2)=x_max" ou "x_max" : utilise toujours $c(t_{1/2}) = x_{max}$.
-- Reste concis dans "resume" et "fiche" (quelques paragraphes maximum) pour ne pas dépasser la limite de longueur de réponse.`;
-
-  try {
-    const geminiRes = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent',
-      {
+      const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
-        },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseMimeType: 'application/json',
-            maxOutputTokens: 8192,
-          },
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error?.message || `Erreur API Google (${response.status})`);
       }
-    );
 
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text();
-      res.status(502).json({ error: 'Erreur côté IA : ' + errText.slice(0, 300) });
-      return;
-    }
+      return await response.json();
+    };
 
-    const data = await geminiRes.json();
-
-    const candidate = data?.candidates?.[0];
-    const finishReason = candidate?.finishReason;
-    let rawText = candidate?.content?.parts?.[0]?.text || '';
-
-    rawText = rawText.trim().replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
-
-    const firstBrace = rawText.indexOf('{');
-    const lastBrace = rawText.lastIndexOf('}');
-    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-      rawText = rawText.slice(firstBrace, lastBrace + 1);
-    }
-
-    let parsed;
+    // 4. Tentative avec le modèle principal, sinon tentative avec le modèle de secours
+    let geminiResponse;
     try {
-      parsed = JSON.parse(rawText);
-    } catch (e) {
-      const hint = finishReason === 'MAX_TOKENS'
-        ? " La réponse a été coupée car elle était trop longue (cours probablement très volumineux)."
-        : '';
-      res.status(502).json({ error: "La réponse de l'IA n'était pas un JSON valide." + hint });
-      return;
+      geminiResponse = await callGeminiAPI(primaryModel);
+    } catch (primaryErr) {
+      console.warn(`Échec avec le modèle ${primaryModel}, tentative avec ${fallbackModel}...`, primaryErr.message);
+      geminiResponse = await callGeminiAPI(fallbackModel);
     }
 
-    // Indique au client si le texte original était plus long que ce qu'on a envoyé à l'IA
-    parsed.truncatedByServer = text.length > MAX_CHARS;
+    // 5. Extraction et nettoyage du JSON
+    const rawContent = geminiResponse?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!rawContent) {
+      throw new Error("L'IA n'a pas renvoyé de réponse exploitable.");
+    }
 
-    res.status(200).json(parsed);
-  } catch (err) {
-    res.status(500).json({ error: 'Erreur serveur : ' + err.message });
+    const cleanedJson = rawContent
+      .replace(/^```json\s*/i, '')
+      .replace(/^```\s*/i, '')
+      .replace(/\s*```$/i, '')
+      .trim();
+
+    const parsedData = JSON.parse(cleanedJson);
+
+    // 6. Réponse envoyée au client (structure identique à la V1)
+    return res.status(200).json({
+      resume: parsedData.resume || '',
+      fiche: parsedData.fiche || '',
+      qcm: parsedData.qcm || [],
+      flashcards: parsedData.flashcards || []
+    });
+
+  } catch (error) {
+    console.error('Erreur API analyze.js :', error);
+    return res.status(500).json({
+      error: 'Erreur lors de la génération par l’IA : ' + error.message
+    });
   }
-};
+}
