@@ -7,7 +7,9 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
   </script>
 </head>
 <body class="h-full text-slate-800 antialiased flex flex-col min-h-screen">
@@ -37,7 +39,7 @@
       <p class="text-xs text-slate-400 mt-1">ou appuie pour choisir un fichier</p>
     </div>
 
-    <!-- File Info & Options -->
+    <!-- File Info Card -->
     <div id="fileInfoCard" class="hidden mt-4 bg-white rounded-2xl p-4 border border-slate-200">
       <div class="flex items-center justify-between mb-4">
         <div>
@@ -46,14 +48,14 @@
         </div>
       </div>
       <div class="flex gap-2 mb-4">
-        <button data-lang="fr" class="lang-btn flex-1 py-2 border rounded-xl text-xs font-semibold active border-indigo-600 bg-indigo-50 text-indigo-600">Français</button>
-        <button data-lang="ar" class="lang-btn flex-1 py-2 border rounded-xl text-xs font-semibold">العربية</button>
-        <button data-lang="darija" class="lang-btn flex-1 py-2 border rounded-xl text-xs font-semibold">Darija</button>
+        <button type="button" data-lang="fr" class="lang-btn flex-1 py-2 border rounded-xl text-xs font-semibold active border-indigo-600 bg-indigo-50 text-indigo-600">Français</button>
+        <button type="button" data-lang="ar" class="lang-btn flex-1 py-2 border rounded-xl text-xs font-semibold">العربية</button>
+        <button type="button" data-lang="darija" class="lang-btn flex-1 py-2 border rounded-xl text-xs font-semibold">Darija</button>
       </div>
-      <button id="analyzeBtn" class="w-full py-3 bg-indigo-600 text-white font-bold text-sm rounded-xl hover:bg-indigo-700">Analyser mon cours</button>
+      <button type="button" id="analyzeBtn" class="w-full py-3 bg-indigo-600 text-white font-bold text-sm rounded-xl hover:bg-indigo-700">Analyser mon cours</button>
     </div>
 
-    <!-- Status Box -->
+    <!-- Status Card -->
     <div id="statusCard" class="hidden mt-4 p-4 rounded-xl text-sm font-medium"></div>
 
     <!-- Results Section -->
