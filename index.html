@@ -123,6 +123,7 @@
     font-size: 14px;
     color: #4f46e5;
     font-weight: 500;
+    text-align: center;
   }
   .spinner {
     width: 18px;
@@ -131,6 +132,7 @@
     border-top-color: #4f46e5;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
   }
   @keyframes spin {
     to { transform: rotate(360deg); }
@@ -150,6 +152,11 @@
     background: #fef2f2;
     border-color: #fecaca;
     color: #991b1b;
+  }
+  .status-box.info {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1e40af;
   }
   .footer-note {
     font-size: 12px;
@@ -391,6 +398,9 @@
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
+    const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50 Mo
+    const MAX_TEXT_CHARS = 40000; // ~ un cours de bonne taille
+
     const pdfInput = document.getElementById('pdfInput');
     const fileName = document.getElementById('fileName');
     const fileSize = document.getElementById('fileSize');
@@ -409,16 +419,30 @@
       return (bytes / (1024 * 1024)).toFixed(2) + ' Mo';
     }
 
+    function showStatus(message, type) {
+      statusBox.style.display = 'block';
+      statusBox.classList.remove('error', 'info');
+      if (type) statusBox.classList.add(type);
+      statusBox.textContent = message;
+    }
+
     pdfInput.addEventListener('change', () => {
       statusBox.style.display = 'none';
-      statusBox.classList.remove('error');
+      statusBox.classList.remove('error', 'info');
       resultsBox.style.display = 'none';
 
       if (pdfInput.files.length) {
         selectedFile = pdfInput.files[0];
         fileName.textContent = selectedFile.name;
         fileSize.textContent = formatFileSize(selectedFile.size);
-        analyzeBtn.style.display = 'block';
+
+        if (selectedFile.size > MAX_FILE_SIZE_BYTES) {
+          showStatus('⚠️ Ce fichier dépasse la limite de 50 Mo. Essaie un PDF plus léger (par exemple en le divisant en plusieurs parties).', 'error');
+          analyzeBtn.style.display = 'none';
+          selectedFile = null;
+        } else {
+          analyzeBtn.style.display = 'block';
+        }
       } else {
         selectedFile = null;
         fileName.textContent = 'Aucun fichier sélectionné';
@@ -600,12 +624,10 @@
     }
     // ---------- Fin quiz interactif ----------
 
-    function renderResults(data) {
-      // Résumé et fiche : texte brut, jamais de HTML injecté
+    function renderResults(data, textWasTruncated) {
       document.getElementById('tab-resume').textContent = data.resume || '';
       document.getElementById('tab-fiche').textContent = data.fiche || '';
 
-      // Flashcards : construction via DOM + textContent, pas d'innerHTML sur le contenu IA
       const fcEl = document.getElementById('tab-flashcards');
       fcEl.innerHTML = '';
       (data.flashcards || []).forEach((f, i) => {
@@ -616,16 +638,20 @@
         fcEl.appendChild(item);
       });
 
-      // QCM : quiz interactif
       initQuiz(data.qcm || []);
 
       resultsBox.style.display = 'block';
 
-      // Rendu des formules mathématiques (KaTeX) sur le résumé, la fiche et les flashcards.
-      // Le QCM gère son propre rendu à chaque changement d'écran.
       renderMathIn(document.getElementById('tab-resume'));
       renderMathIn(document.getElementById('tab-fiche'));
       renderMathIn(fcEl);
+
+      const wasTruncated = textWasTruncated || data.truncatedByServer;
+      if (wasTruncated) {
+        showStatus('✅ Contenu généré avec succès. ℹ️ Ton cours est très long : seule une partie a été analysée pour cette version.', 'info');
+      } else {
+        showStatus('✅ Contenu généré avec succès.');
+      }
     }
 
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -644,7 +670,7 @@
       loadingBox.style.display = 'flex';
       loadingText.textContent = 'Lecture du PDF en cours…';
       statusBox.style.display = 'none';
-      statusBox.classList.remove('error');
+      statusBox.classList.remove('error', 'info');
       resultsBox.style.display = 'none';
 
       try {
@@ -653,10 +679,17 @@
 
         let fullText = '';
         for (let i = 1; i <= pdf.numPages; i++) {
+          loadingText.textContent = `Lecture de la page ${i}/${pdf.numPages}…`;
           const page = await pdf.getPage(i);
           const content = await page.getTextContent();
           const pageText = content.items.map(item => item.str).join(' ');
           fullText += pageText + '\n\n';
+        }
+
+        let textWasTruncated = false;
+        if (fullText.length > MAX_TEXT_CHARS) {
+          fullText = fullText.slice(0, MAX_TEXT_CHARS);
+          textWasTruncated = true;
         }
 
         loadingText.textContent = "Génération du contenu par l'IA en cours…";
@@ -673,13 +706,9 @@
           throw new Error(data.error || 'Erreur inconnue');
         }
 
-        renderResults(data);
-        statusBox.style.display = 'block';
-        statusBox.textContent = '✅ Contenu généré avec succès.';
+        renderResults(data, textWasTruncated);
       } catch (err) {
-        statusBox.style.display = 'block';
-        statusBox.classList.add('error');
-        statusBox.textContent = '❌ Erreur : ' + err.message;
+        showStatus('❌ Erreur : ' + err.message, 'error');
       } finally {
         analyzeBtn.disabled = false;
         loadingBox.style.display = 'none';
