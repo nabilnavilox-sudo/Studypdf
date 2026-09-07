@@ -197,32 +197,144 @@
     white-space: pre-wrap;
   }
   .tab-content.active { display: block; }
-  .qcm-item, .fc-item {
+  #tab-qcm { white-space: normal; }
+  .fc-item {
     margin-bottom: 16px;
     padding-bottom: 16px;
     border-bottom: 1px solid #eee;
   }
-  .qcm-item:last-child, .fc-item:last-child {
+  .fc-item:last-child {
     border-bottom: none;
     margin-bottom: 0;
     padding-bottom: 0;
   }
-  .qcm-question, .fc-question {
+  .fc-question {
     font-weight: 600;
     margin-bottom: 8px;
   }
-  .qcm-options { list-style: none; margin-bottom: 8px; }
-  .qcm-options li {
-    padding: 6px 10px;
-    background: #f7f8fa;
-    border-radius: 8px;
-    margin-bottom: 4px;
-    font-size: 13px;
-  }
-  .qcm-reponse, .fc-reponse {
+  .fc-reponse {
     font-size: 13px;
     color: #16a34a;
     font-weight: 600;
+  }
+
+  /* --- Quiz interactif --- */
+  .quiz-progress {
+    font-size: 12px;
+    font-weight: 600;
+    color: #999;
+    margin-bottom: 12px;
+  }
+  .quiz-question {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    line-height: 1.4;
+  }
+  .quiz-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    padding: 12px 14px;
+    border: 2px solid #e0e0e6;
+    border-radius: 12px;
+    background: white;
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 10px;
+    cursor: pointer;
+  }
+  .quiz-option-letter {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #f0f0f5;
+    color: #555;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .quiz-option.selected {
+    border-color: #4f46e5;
+    background: #eef0ff;
+  }
+  .quiz-option.selected .quiz-option-letter {
+    background: #4f46e5;
+    color: white;
+  }
+  .quiz-option.correct {
+    border-color: #16a34a;
+    background: #f0fdf4;
+  }
+  .quiz-option.correct .quiz-option-letter {
+    background: #16a34a;
+    color: white;
+  }
+  .quiz-option.incorrect {
+    border-color: #dc2626;
+    background: #fef2f2;
+  }
+  .quiz-option.incorrect .quiz-option-letter {
+    background: #dc2626;
+    color: white;
+  }
+  .quiz-option:disabled {
+    cursor: default;
+  }
+  .quiz-explanation {
+    margin-top: 4px;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    background: #f7f8fa;
+    border-radius: 12px;
+    font-size: 13px;
+    color: #444;
+    line-height: 1.5;
+  }
+  .quiz-result-label {
+    font-weight: 700;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+  .quiz-result-label.correct { color: #16a34a; }
+  .quiz-result-label.incorrect { color: #dc2626; }
+  .quiz-action-btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+  }
+  .quiz-validate-btn { background: #4f46e5; }
+  .quiz-validate-btn:disabled { background: #c7c9f5; cursor: default; }
+  .quiz-next-btn { background: #16a34a; }
+  .quiz-restart-btn { background: #4f46e5; margin-top: 16px; }
+
+  .quiz-score-screen { text-align: center; }
+  .quiz-score-number {
+    font-size: 40px;
+    font-weight: 700;
+    color: #4f46e5;
+    margin-bottom: 4px;
+  }
+  .quiz-score-percent {
+    font-size: 14px;
+    color: #999;
+    margin-bottom: 16px;
+  }
+  .quiz-score-message {
+    font-size: 14px;
+    color: #333;
+    line-height: 1.5;
   }
 </style>
 </head>
@@ -324,7 +436,7 @@
       });
     });
 
-    // Crée un <li> avec du texte brut (jamais interprété comme du HTML)
+    // Crée un élément avec du texte brut (jamais interprété comme du HTML)
     function createTextEl(tag, text, className) {
       const el = document.createElement(tag);
       if (className) el.className = className;
@@ -332,32 +444,168 @@
       return el;
     }
 
+    function renderMathIn(el) {
+      if (window.renderMathInElement) {
+        renderMathInElement(el, {
+          delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '$', right: '$', display: false }
+          ],
+          throwOnError: false
+        });
+      }
+    }
+
+    // ---------- Quiz interactif ----------
+    const quizState = {
+      questions: [],
+      index: 0,
+      score: 0,
+      selectedIndex: null,
+      answered: false
+    };
+    const qcmTab = document.getElementById('tab-qcm');
+    const letters = ['A', 'B', 'C', 'D'];
+
+    function initQuiz(questions) {
+      quizState.questions = questions || [];
+      quizState.index = 0;
+      quizState.score = 0;
+      renderQuizQuestion();
+    }
+
+    function findCorrectIndex(q) {
+      const options = q.options || [];
+      let idx = options.findIndex(o => o.trim() === (q.reponse || '').trim());
+      if (idx === -1) {
+        idx = options.findIndex(o => o.trim().includes((q.reponse || '').trim()));
+      }
+      return idx === -1 ? 0 : idx;
+    }
+
+    function renderQuizQuestion() {
+      qcmTab.innerHTML = '';
+      quizState.selectedIndex = null;
+      quizState.answered = false;
+
+      const total = quizState.questions.length;
+      if (total === 0) {
+        qcmTab.appendChild(createTextEl('div', 'Aucun QCM disponible.'));
+        return;
+      }
+
+      const q = quizState.questions[quizState.index];
+      const correctIndex = findCorrectIndex(q);
+
+      qcmTab.appendChild(createTextEl('div', `Question ${quizState.index + 1}/${total}`, 'quiz-progress'));
+      qcmTab.appendChild(createTextEl('div', q.question || '', 'quiz-question'));
+
+      const optionButtons = [];
+      (q.options || []).forEach((optionText, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'quiz-option';
+        btn.type = 'button';
+
+        const letterSpan = createTextEl('span', letters[i] || '', 'quiz-option-letter');
+        const textSpan = createTextEl('span', optionText);
+
+        btn.appendChild(letterSpan);
+        btn.appendChild(textSpan);
+
+        btn.addEventListener('click', () => {
+          if (quizState.answered) return;
+          quizState.selectedIndex = i;
+          optionButtons.forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          validateBtn.disabled = false;
+        });
+
+        optionButtons.push(btn);
+        qcmTab.appendChild(btn);
+      });
+
+      const validateBtn = document.createElement('button');
+      validateBtn.className = 'quiz-action-btn quiz-validate-btn';
+      validateBtn.textContent = 'Valider';
+      validateBtn.disabled = true;
+
+      validateBtn.addEventListener('click', () => {
+        if (quizState.selectedIndex === null || quizState.answered) return;
+        quizState.answered = true;
+
+        const isCorrect = quizState.selectedIndex === correctIndex;
+        if (isCorrect) quizState.score++;
+
+        optionButtons.forEach((b, i) => {
+          b.disabled = true;
+          if (i === correctIndex) b.classList.add('correct');
+          else if (i === quizState.selectedIndex) b.classList.add('incorrect');
+        });
+
+        const resultLabel = createTextEl(
+          'div',
+          isCorrect ? '✅ Bonne réponse !' : '❌ Mauvaise réponse',
+          'quiz-result-label ' + (isCorrect ? 'correct' : 'incorrect')
+        );
+
+        const explanationBox = createTextEl('div', q.explication || '', 'quiz-explanation');
+
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'quiz-action-btn quiz-next-btn';
+        nextBtn.textContent = (quizState.index + 1 < total) ? 'Question suivante' : 'Voir mon score';
+        nextBtn.addEventListener('click', () => {
+          if (quizState.index + 1 < total) {
+            quizState.index++;
+            renderQuizQuestion();
+          } else {
+            renderQuizScore();
+          }
+        });
+
+        validateBtn.remove();
+        qcmTab.appendChild(resultLabel);
+        if (q.explication) qcmTab.appendChild(explanationBox);
+        qcmTab.appendChild(nextBtn);
+
+        renderMathIn(qcmTab);
+      });
+
+      qcmTab.appendChild(validateBtn);
+      renderMathIn(qcmTab);
+    }
+
+    function renderQuizScore() {
+      qcmTab.innerHTML = '';
+      const total = quizState.questions.length;
+      const percent = total > 0 ? Math.round((quizState.score / total) * 100) : 0;
+
+      let message;
+      if (percent >= 80) message = 'Excellent travail, tu maîtrises bien ce cours !';
+      else if (percent >= 50) message = 'Pas mal ! Quelques révisions supplémentaires t\'aideront à consolider.';
+      else message = 'Il est recommandé de revoir ce chapitre avant de continuer.';
+
+      const screen = document.createElement('div');
+      screen.className = 'quiz-score-screen';
+      screen.appendChild(createTextEl('div', `${quizState.score}/${total}`, 'quiz-score-number'));
+      screen.appendChild(createTextEl('div', `${percent}%`, 'quiz-score-percent'));
+      screen.appendChild(createTextEl('div', message, 'quiz-score-message'));
+
+      const restartBtn = document.createElement('button');
+      restartBtn.className = 'quiz-action-btn quiz-restart-btn';
+      restartBtn.textContent = 'Refaire le QCM';
+      restartBtn.addEventListener('click', () => initQuiz(quizState.questions));
+
+      screen.appendChild(restartBtn);
+      qcmTab.appendChild(screen);
+    }
+    // ---------- Fin quiz interactif ----------
+
     function renderResults(data) {
       // Résumé et fiche : texte brut, jamais de HTML injecté
       document.getElementById('tab-resume').textContent = data.resume || '';
       document.getElementById('tab-fiche').textContent = data.fiche || '';
 
-      // QCM : construction via DOM + textContent, pas d'innerHTML sur le contenu IA
-      const qcmEl = document.getElementById('tab-qcm');
-      qcmEl.innerHTML = '';
-      (data.qcm || []).forEach((q, i) => {
-        const item = document.createElement('div');
-        item.className = 'qcm-item';
-
-        item.appendChild(createTextEl('div', `${i + 1}. ${q.question}`, 'qcm-question'));
-
-        const ul = document.createElement('ul');
-        ul.className = 'qcm-options';
-        (q.options || []).forEach(o => {
-          ul.appendChild(createTextEl('li', o));
-        });
-        item.appendChild(ul);
-
-        item.appendChild(createTextEl('div', 'Réponse : ' + q.reponse, 'qcm-reponse'));
-        qcmEl.appendChild(item);
-      });
-
-      // Flashcards : idem, texte brut sécurisé
+      // Flashcards : construction via DOM + textContent, pas d'innerHTML sur le contenu IA
       const fcEl = document.getElementById('tab-flashcards');
       fcEl.innerHTML = '';
       (data.flashcards || []).forEach((f, i) => {
@@ -368,20 +616,16 @@
         fcEl.appendChild(item);
       });
 
+      // QCM : quiz interactif
+      initQuiz(data.qcm || []);
+
       resultsBox.style.display = 'block';
 
-      // Rendu des formules mathématiques (KaTeX) sur l'ensemble des résultats.
-      // Le texte reste du texte brut (sécurisé) ; KaTeX transforme uniquement
-      // les portions $...$ et $$...$$ en formules visuelles.
-      if (window.renderMathInElement) {
-        renderMathInElement(resultsBox, {
-          delimiters: [
-            { left: '$$', right: '$$', display: true },
-            { left: '$', right: '$', display: false }
-          ],
-          throwOnError: false
-        });
-      }
+      // Rendu des formules mathématiques (KaTeX) sur le résumé, la fiche et les flashcards.
+      // Le QCM gère son propre rendu à chaque changement d'écran.
+      renderMathIn(document.getElementById('tab-resume'));
+      renderMathIn(document.getElementById('tab-fiche'));
+      renderMathIn(fcEl);
     }
 
     document.querySelectorAll('.tab-btn').forEach(btn => {
