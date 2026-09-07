@@ -17,8 +17,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Le texte du document est vide.' });
     }
 
-    const primaryModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-    const fallbackModel = 'gemini-2.0-flash';
+    const primaryModel = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+    const fallbackModel = 'gemini-2.5-flash';
 
     const langInstruction = {
       fr: 'Rédige TOUT le contenu impérativement en FRANÇAIS.',
