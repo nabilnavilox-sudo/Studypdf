@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-theme="light">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,389 +7,604 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #FAFAFB;
+    --surface: #FFFFFF;
+    --surface-alt: #F3F4F6;
+    --border: #E5E7EB;
+    --text: #16161A;
+    --text-secondary: #6B7280;
+    --text-tertiary: #9CA3AF;
+    --accent: #6366F1;
+    --accent-hover: #4F46E5;
+    --accent-soft: #EEF0FF;
+    --success: #10B981;
+    --success-soft: #ECFDF5;
+    --error: #EF4444;
+    --error-soft: #FEF2F2;
+    --info-soft: #EFF6FF;
+    --info-text: #1E40AF;
+    --shadow: 0 1px 2px rgba(16,24,40,0.04), 0 4px 10px rgba(16,24,40,0.05);
+  }
+
+  html[data-theme="dark"] {
+    --bg: #101014;
+    --surface: #18181D;
+    --surface-alt: #1F1F26;
+    --border: #2A2A33;
+    --text: #F4F4F5;
+    --text-secondary: #A1A1AA;
+    --text-tertiary: #71717A;
+    --accent: #818CF8;
+    --accent-hover: #6366F1;
+    --accent-soft: #23233A;
+    --success: #34D399;
+    --success-soft: #14261F;
+    --error: #F87171;
+    --error-soft: #2A1416;
+    --info-soft: #16233A;
+    --info-text: #93C5FD;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.35);
+  }
+
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: #f7f8fa;
-    color: #1a1a1a;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 18px 40px;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+  }
+
+  @media (min-width: 768px) {
+    .app { max-width: 600px; padding: 0 24px 56px; }
+  }
+
+  /* ---------- Topbar ---------- */
+  .topbar {
+    display: flex;
     align-items: center;
-    padding: 24px 16px;
+    justify-content: space-between;
+    padding: 20px 0 8px;
   }
-  .logo {
-    font-size: 28px;
-    font-weight: 700;
-    color: #4f46e5;
-    margin-top: 24px;
-    margin-bottom: 8px;
-  }
-  .tagline {
-    text-align: center;
-    color: #555;
-    font-size: 16px;
-    max-width: 320px;
-    margin-bottom: 32px;
-    line-height: 1.4;
-  }
-  .card {
-    background: white;
-    width: 100%;
-    max-width: 420px;
-    border-radius: 16px;
-    padding: 24px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-    margin-bottom: 16px;
-  }
-  .upload-btn {
-    display: block;
-    width: 100%;
-    padding: 16px;
-    background: #4f46e5;
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-mark {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: var(--accent);
     color: white;
-    border: none;
-    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    letter-spacing: -0.02em;
+  }
+  .brand-name {
     font-size: 16px;
-    font-weight: 600;
-    text-align: center;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .theme-toggle {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-secondary);
+    display: flex; align-items: center; justify-content: center;
     cursor: pointer;
   }
-  .upload-btn:active { opacity: 0.85; }
-  input[type="file"] { display: none; }
-  .file-name {
-    margin-top: 12px;
-    font-size: 14px;
-    color: #666;
-    text-align: center;
-  }
-  .file-size {
-    margin-top: 4px;
-    font-size: 12px;
-    color: #999;
-    text-align: center;
-  }
-  label.section-label {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    color: #333;
+  .theme-toggle:active { transform: scale(0.94); }
+  .theme-toggle svg { width: 17px; height: 17px; }
+  .icon-sun { display: none; }
+  html[data-theme="dark"] .icon-moon { display: none; }
+  html[data-theme="dark"] .icon-sun { display: block; }
+
+  /* ---------- Hero ---------- */
+  .hero { padding: 28px 0 8px; }
+  .hero h1 {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
     margin-bottom: 10px;
   }
-  .lang-options {
+  @media (min-width: 768px) { .hero h1 { font-size: 38px; } }
+  .hero p {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.55;
+    max-width: 42ch;
+    margin-bottom: 24px;
+  }
+
+  /* ---------- Dropzone ---------- */
+  .dropzone {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+    padding: 34px 20px;
+    border: 1.5px dashed var(--border);
+    border-radius: 18px;
+    background: var(--surface);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .dropzone:active { transform: scale(0.995); }
+  .dropzone.dragover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .dropzone input[type="file"] { display: none; }
+  .dropzone-icon {
+    width: 46px; height: 46px;
+    border-radius: 12px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .dropzone-icon svg { width: 22px; height: 22px; }
+  .dropzone-text strong {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+  .dropzone-text span {
+    font-size: 13px;
+    color: var(--text-tertiary);
+  }
+
+  /* ---------- File card ---------- */
+  .file-card {
+    margin-top: 14px;
+    padding: 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+  }
+  .file-card[hidden] { display: none; }
+  .file-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .file-icon {
+    flex-shrink: 0;
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    background: var(--error-soft);
+    color: var(--error);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .file-icon svg { width: 18px; height: 18px; }
+  .file-meta { min-width: 0; flex: 1; }
+  .file-meta-name {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .file-meta-sub {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+  }
+
+  .lang-row {
     display: flex;
     gap: 8px;
+    margin-top: 16px;
   }
   .lang-btn {
     flex: 1;
-    padding: 12px 8px;
-    border: 2px solid #e0e0e6;
+    padding: 10px 6px;
+    border: 1px solid var(--border);
     border-radius: 10px;
-    background: white;
-    font-size: 14px;
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 13px;
     font-weight: 500;
-    color: #333;
     cursor: pointer;
   }
   .lang-btn.selected {
-    border-color: #4f46e5;
-    background: #eef0ff;
-    color: #4f46e5;
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent-hover);
+    font-weight: 600;
   }
+
   .analyze-btn {
     display: none;
     width: 100%;
-    padding: 16px;
+    padding: 15px;
     margin-top: 16px;
-    background: #16a34a;
+    background: var(--accent);
     color: white;
     border: none;
     border-radius: 12px;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
-    text-align: center;
     cursor: pointer;
+    transition: background 0.15s ease;
   }
-  .analyze-btn:active { opacity: 0.85; }
-  .analyze-btn:disabled {
-    background: #9ca3af;
-    cursor: default;
-  }
+  .analyze-btn:active { transform: scale(0.985); }
+  .analyze-btn:disabled { background: var(--text-tertiary); cursor: default; }
+
   .loading-box {
     display: none;
     align-items: center;
-    justify-content: center;
     gap: 10px;
     margin-top: 16px;
-    font-size: 14px;
-    color: #4f46e5;
+    font-size: 13px;
+    color: var(--accent-hover);
     font-weight: 500;
-    text-align: center;
   }
   .spinner {
-    width: 18px;
-    height: 18px;
-    border: 3px solid #e0e0e6;
-    border-top-color: #4f46e5;
+    width: 16px; height: 16px;
+    border: 2.5px solid var(--border);
+    border-top-color: var(--accent);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
     flex-shrink: 0;
   }
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
   .status-box {
-    margin-top: 16px;
-    font-size: 13px;
-    color: #333;
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
-    border-radius: 10px;
-    padding: 12px;
     display: none;
-    line-height: 1.4;
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.5;
   }
-  .status-box.error {
-    background: #fef2f2;
-    border-color: #fecaca;
-    color: #991b1b;
-  }
-  .status-box.info {
-    background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #1e40af;
-  }
-  .footer-note {
-    font-size: 12px;
-    color: #999;
-    text-align: center;
-    margin-top: 24px;
+  .status-box.success { background: var(--success-soft); color: var(--success); }
+  .status-box.error { background: var(--error-soft); color: var(--error); }
+  .status-box.info { background: var(--info-soft); color: var(--info-text); }
+
+  /* ---------- Workspace / results ---------- */
+  .workspace[hidden] { display: none; }
+  .workspace { margin-top: 32px; animation: reveal 0.35s ease both; }
+  @keyframes reveal {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
-  /* --- Résultats --- */
-  .results {
-    display: none;
-    width: 100%;
-    max-width: 420px;
-  }
-  .tabs {
+  .tabbar {
     display: flex;
-    gap: 6px;
-    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
     overflow-x: auto;
   }
   .tab-btn {
     flex: 1;
-    padding: 10px 6px;
+    padding: 12px 4px;
+    background: none;
     border: none;
-    border-radius: 10px;
-    background: white;
-    font-size: 13px;
+    border-bottom: 2px solid transparent;
+    color: var(--text-tertiary);
+    font-size: 13.5px;
     font-weight: 600;
-    color: #555;
-    cursor: pointer;
     white-space: nowrap;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
   }
-  .tab-btn.active {
-    background: #4f46e5;
-    color: white;
-  }
-  .tab-content {
-    display: none;
-    background: white;
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+
+  .panel { display: none; }
+  .panel.active { display: block; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .content-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-    font-size: 14px;
-    line-height: 1.5;
+    padding: 22px;
+    font-size: 14.5px;
+    line-height: 1.7;
     white-space: pre-wrap;
+    color: var(--text);
   }
-  .tab-content.active { display: block; }
-  #tab-qcm { white-space: normal; }
+  .content-heading {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+  }
+
   .fc-item {
     margin-bottom: 16px;
     padding-bottom: 16px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border);
   }
-  .fc-item:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
-  }
-  .fc-question {
-    font-weight: 600;
-    margin-bottom: 8px;
-  }
-  .fc-reponse {
-    font-size: 13px;
-    color: #16a34a;
-    font-weight: 600;
-  }
+  .fc-item:last-child { border: none; margin: 0; padding: 0; }
+  .fc-question { font-weight: 600; margin-bottom: 6px; }
+  .fc-reponse { font-size: 13.5px; color: var(--success); font-weight: 600; }
 
-  /* --- Quiz interactif --- */
-  .quiz-progress {
+  /* ---------- Quiz ---------- */
+  .quiz-progress-track {
+    height: 5px;
+    background: var(--surface-alt);
+    border-radius: 3px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .quiz-progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    transition: width 0.25s ease;
+  }
+  .quiz-progress-label {
     font-size: 12px;
     font-weight: 600;
-    color: #999;
-    margin-bottom: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 14px;
   }
   .quiz-question {
-    font-size: 15px;
-    font-weight: 600;
-    margin-bottom: 16px;
+    font-size: 16px;
+    font-weight: 700;
     line-height: 1.4;
+    margin-bottom: 18px;
+    letter-spacing: -0.01em;
   }
   .quiz-option {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     width: 100%;
     text-align: left;
-    padding: 12px 14px;
-    border: 2px solid #e0e0e6;
-    border-radius: 12px;
-    background: white;
+    padding: 15px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    color: var(--text);
     font-size: 14px;
-    color: #333;
     margin-bottom: 10px;
     cursor: pointer;
+    transition: border-color 0.12s ease, background 0.12s ease;
   }
+  .quiz-option:active { transform: scale(0.99); }
   .quiz-option-letter {
     flex-shrink: 0;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: #f0f0f5;
-    color: #555;
+    width: 26px; height: 26px;
+    border-radius: 8px;
+    background: var(--surface-alt);
+    color: var(--text-secondary);
     font-size: 12px;
     font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .quiz-option.selected { border-color: var(--accent); background: var(--accent-soft); }
+  .quiz-option.selected .quiz-option-letter { background: var(--accent); color: white; }
+  .quiz-option.correct { border-color: var(--success); background: var(--success-soft); }
+  .quiz-option.correct .quiz-option-letter { background: var(--success); color: white; }
+  .quiz-option.incorrect { border-color: var(--error); background: var(--error-soft); }
+  .quiz-option.incorrect .quiz-option-letter { background: var(--error); color: white; }
+  .quiz-option:disabled { cursor: default; }
+
+  .quiz-explanation {
+    margin-top: 2px;
+    margin-bottom: 16px;
+    padding: 14px 16px;
+    background: var(--surface-alt);
+    border-radius: 14px;
+    font-size: 13.5px;
+    color: var(--text-secondary);
+    line-height: 1.55;
+  }
+  .quiz-result-label { font-weight: 700; margin-bottom: 10px; font-size: 14px; }
+  .quiz-result-label.correct { color: var(--success); }
+  .quiz-result-label.incorrect { color: var(--error); }
+
+  .primary-btn {
+    display: block;
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 12px;
+    font-size: 14.5px;
+    font-weight: 600;
+    color: white;
+    background: var(--accent);
+    cursor: pointer;
+  }
+  .primary-btn:active { transform: scale(0.985); }
+  .primary-btn:disabled { background: var(--text-tertiary); cursor: default; }
+
+  .quiz-score-screen { text-align: center; padding: 12px 0; animation: reveal 0.3s ease both; }
+  .quiz-score-number { font-size: 42px; font-weight: 700; color: var(--accent); letter-spacing: -0.02em; }
+  .quiz-score-percent { font-size: 14px; color: var(--text-tertiary); margin: 4px 0 16px; }
+  .quiz-score-message { font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 20px; }
+
+  /* ---------- Flashcards ---------- */
+  .fc-progress-label {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    margin-bottom: 14px;
+  }
+  .flashcard-scene {
+    perspective: 1200px;
+    margin-bottom: 16px;
+  }
+  .flashcard {
+    position: relative;
+    min-height: 180px;
+    transform-style: preserve-3d;
+    transition: transform 0.5s cubic-bezier(0.4, 0.2, 0.2, 1);
+    cursor: pointer;
+  }
+  .flashcard.flipped { transform: rotateY(180deg); }
+  .flashcard-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-  .quiz-option.selected {
-    border-color: #4f46e5;
-    background: #eef0ff;
-  }
-  .quiz-option.selected .quiz-option-letter {
-    background: #4f46e5;
-    color: white;
-  }
-  .quiz-option.correct {
-    border-color: #16a34a;
-    background: #f0fdf4;
-  }
-  .quiz-option.correct .quiz-option-letter {
-    background: #16a34a;
-    color: white;
-  }
-  .quiz-option.incorrect {
-    border-color: #dc2626;
-    background: #fef2f2;
-  }
-  .quiz-option.incorrect .quiz-option-letter {
-    background: #dc2626;
-    color: white;
-  }
-  .quiz-option:disabled {
-    cursor: default;
-  }
-  .quiz-explanation {
-    margin-top: 4px;
-    margin-bottom: 16px;
-    padding: 12px 14px;
-    background: #f7f8fa;
-    border-radius: 12px;
-    font-size: 13px;
-    color: #444;
-    line-height: 1.5;
-  }
-  .quiz-result-label {
-    font-weight: 700;
-    margin-bottom: 8px;
-    font-size: 14px;
-  }
-  .quiz-result-label.correct { color: #16a34a; }
-  .quiz-result-label.incorrect { color: #dc2626; }
-  .quiz-action-btn {
-    display: block;
-    width: 100%;
-    padding: 14px;
-    border: none;
-    border-radius: 12px;
+    text-align: center;
     font-size: 15px;
+    line-height: 1.5;
+    background: var(--surface);
+  }
+  .flashcard-face-front { color: var(--text); font-weight: 600; }
+  .flashcard-face-back {
+    transform: rotateY(180deg);
+    background: var(--accent-soft);
+    color: var(--accent-hover);
     font-weight: 600;
-    color: white;
+  }
+  .flashcard-hint {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 16px;
+  }
+  .fc-nav-row { display: flex; gap: 10px; }
+  .fc-nav-btn {
+    flex: 1;
+    padding: 13px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
     cursor: pointer;
   }
-  .quiz-validate-btn { background: #4f46e5; }
-  .quiz-validate-btn:disabled { background: #c7c9f5; cursor: default; }
-  .quiz-next-btn { background: #16a34a; }
-  .quiz-restart-btn { background: #4f46e5; margin-top: 16px; }
+  .fc-nav-btn:active { transform: scale(0.98); }
+  .fc-nav-btn:disabled { color: var(--text-tertiary); cursor: default; }
 
-  .quiz-score-screen { text-align: center; }
-  .quiz-score-number {
-    font-size: 40px;
+  /* ---------- Footer ---------- */
+  .site-footer {
+    margin-top: auto;
+    padding-top: 40px;
+    text-align: center;
+  }
+  .site-footer-name {
+    font-size: 13px;
     font-weight: 700;
-    color: #4f46e5;
-    margin-bottom: 4px;
+    color: var(--text-secondary);
+    margin-bottom: 3px;
   }
-  .quiz-score-percent {
-    font-size: 14px;
-    color: #999;
-    margin-bottom: 16px;
+  .site-footer-tagline {
+    font-size: 12px;
+    color: var(--text-tertiary);
   }
-  .quiz-score-message {
-    font-size: 14px;
-    color: #333;
-    line-height: 1.5;
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+
+  button:focus-visible, .dropzone:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
 </style>
 </head>
 <body>
 
-  <div class="logo">StudyPDF</div>
-  <div class="tagline">Transforme tes cours en résumés, fiches, QCM et flashcards en quelques secondes.</div>
-
-  <div class="card">
-    <label class="section-label">1. Importer ton PDF</label>
-    <label class="upload-btn" for="pdfInput">Choisir un fichier PDF</label>
-    <input type="file" id="pdfInput" accept="application/pdf" />
-    <div class="file-name" id="fileName">Aucun fichier sélectionné</div>
-    <div class="file-size" id="fileSize"></div>
-
-    <button class="analyze-btn" id="analyzeBtn">Analyser mon cours</button>
-
-    <div class="loading-box" id="loadingBox">
-      <div class="spinner"></div>
-      <span id="loadingText">Lecture du PDF en cours…</span>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-mark">SP</div>
+        <span class="brand-name">StudyPDF</span>
+      </div>
+      <button class="theme-toggle" id="themeToggle" aria-label="Changer de thème">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
     </div>
 
-    <div class="status-box" id="statusBox"></div>
-  </div>
+    <main>
+      <section class="hero">
+        <h1>Révise plus vite, avec l'IA</h1>
+        <p>Importe le PDF de ton cours. StudyPDF en tire un résumé, une fiche de révision, un QCM et des flashcards, prêts en quelques secondes.</p>
 
-  <div class="card">
-    <label class="section-label">2. Langue de sortie</label>
-    <div class="lang-options">
-      <button class="lang-btn selected" data-lang="fr">Français</button>
-      <button class="lang-btn" data-lang="ar">العربية</button>
-      <button class="lang-btn" data-lang="darija">Darija</button>
-    </div>
-  </div>
+        <label class="dropzone" id="dropzone" for="pdfInput" tabindex="0">
+          <input type="file" id="pdfInput" accept="application/pdf" />
+          <div class="dropzone-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+          </div>
+          <div class="dropzone-text">
+            <strong>Dépose ton PDF ici</strong>
+            <span>ou appuie pour choisir un fichier</span>
+          </div>
+        </label>
 
-  <div class="results" id="results">
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="resume">Résumé</button>
-      <button class="tab-btn" data-tab="fiche">Fiche</button>
-      <button class="tab-btn" data-tab="qcm">QCM</button>
-      <button class="tab-btn" data-tab="flashcards">Flashcards</button>
-    </div>
-    <div class="tab-content active" id="tab-resume"></div>
-    <div class="tab-content" id="tab-fiche"></div>
-    <div class="tab-content" id="tab-qcm"></div>
-    <div class="tab-content" id="tab-flashcards"></div>
-  </div>
+        <div class="file-card" id="fileCard" hidden>
+          <div class="file-row">
+            <div class="file-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+            </div>
+            <div class="file-meta">
+              <div class="file-meta-name" id="fileName"></div>
+              <div class="file-meta-sub" id="fileMetaSub"></div>
+            </div>
+          </div>
 
-  <div class="footer-note">Version prototype — StudyPDF</div>
+          <div class="lang-row">
+            <button class="lang-btn selected" data-lang="fr">Français</button>
+            <button class="lang-btn" data-lang="ar">العربية</button>
+            <button class="lang-btn" data-lang="darija">Darija</button>
+          </div>
+
+          <button class="analyze-btn" id="analyzeBtn">Analyser mon cours</button>
+
+          <div class="loading-box" id="loadingBox">
+            <div class="spinner"></div>
+            <span id="loadingText">Lecture du PDF en cours…</span>
+          </div>
+
+          <div class="status-box" id="statusBox"></div>
+        </div>
+      </section>
+
+      <section class="workspace" id="results" hidden>
+        <nav class="tabbar">
+          <button class="tab-btn active" data-tab="resume">Résumé</button>
+          <button class="tab-btn" data-tab="fiche">Fiche</button>
+          <button class="tab-btn" data-tab="qcm">QCM</button>
+          <button class="tab-btn" data-tab="flashcards">Flashcards</button>
+        </nav>
+
+        <div class="panel active" id="panel-resume">
+          <div class="content-card" id="tab-resume"></div>
+        </div>
+        <div class="panel" id="panel-fiche">
+          <div class="content-card" id="tab-fiche"></div>
+        </div>
+        <div class="panel" id="panel-qcm">
+          <div id="tab-qcm"></div>
+        </div>
+        <div class="panel" id="panel-flashcards">
+          <div id="tab-flashcards"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="site-footer-name">StudyPDF</div>
+      <div class="site-footer-tagline">Transforme tes cours en outils de révision intelligents.</div>
+    </footer>
+  </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
@@ -399,11 +614,25 @@
       "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
     const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50 Mo
-    const MAX_TEXT_CHARS = 40000; // ~ un cours de bonne taille
+    const MAX_TEXT_CHARS = 40000;
 
+    // ---------- Thème ----------
+    const themeToggle = document.getElementById('themeToggle');
+    const savedTheme = localStorage.getItem('studypdf-theme');
+    if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+    themeToggle.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('studypdf-theme', next);
+    });
+
+    // ---------- Éléments ----------
+    const dropzone = document.getElementById('dropzone');
     const pdfInput = document.getElementById('pdfInput');
+    const fileCard = document.getElementById('fileCard');
     const fileName = document.getElementById('fileName');
-    const fileSize = document.getElementById('fileSize');
+    const fileMetaSub = document.getElementById('fileMetaSub');
     const analyzeBtn = document.getElementById('analyzeBtn');
     const loadingBox = document.getElementById('loadingBox');
     const loadingText = document.getElementById('loadingText');
@@ -411,6 +640,7 @@
     const resultsBox = document.getElementById('results');
 
     let selectedFile = null;
+    let loadedPdfDoc = null;
     let selectedLang = 'fr';
 
     function formatFileSize(bytes) {
@@ -421,42 +651,84 @@
 
     function showStatus(message, type) {
       statusBox.style.display = 'block';
-      statusBox.classList.remove('error', 'info');
+      statusBox.classList.remove('error', 'info', 'success');
       if (type) statusBox.classList.add(type);
       statusBox.textContent = message;
     }
+    function hideStatus() {
+      statusBox.style.display = 'none';
+      statusBox.classList.remove('error', 'info', 'success');
+    }
+
+    function updateFileMetaSub(langLabel) {
+      const parts = [formatFileSize(selectedFile.size)];
+      if (loadedPdfDoc) parts.push(loadedPdfDoc.numPages + ' page' + (loadedPdfDoc.numPages > 1 ? 's' : ''));
+      parts.push(langLabel);
+      fileMetaSub.textContent = parts.join(' · ');
+    }
+
+    function langLabelFor(code) {
+      return { fr: 'Français', ar: 'العربية', darija: 'Darija' }[code] || 'Français';
+    }
+
+    async function handleSelectedFile(file) {
+      hideStatus();
+      resultsBox.hidden = true;
+      loadedPdfDoc = null;
+
+      if (!file || file.type !== 'application/pdf') {
+        showStatus('⚠️ Merci de choisir un fichier PDF.', 'error');
+        return;
+      }
+
+      selectedFile = file;
+      fileName.textContent = file.name;
+      fileCard.hidden = false;
+      analyzeBtn.style.display = 'none';
+      updateFileMetaSub(langLabelFor(selectedLang));
+
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        showStatus('⚠️ Ce fichier dépasse la limite de 50 Mo. Essaie un PDF plus léger.', 'error');
+        selectedFile = null;
+        return;
+      }
+
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        loadedPdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        updateFileMetaSub(langLabelFor(selectedLang));
+        analyzeBtn.style.display = 'block';
+      } catch (err) {
+        showStatus('❌ Impossible de lire ce PDF : ' + err.message, 'error');
+        selectedFile = null;
+      }
+    }
 
     pdfInput.addEventListener('change', () => {
-      statusBox.style.display = 'none';
-      statusBox.classList.remove('error', 'info');
-      resultsBox.style.display = 'none';
-
-      if (pdfInput.files.length) {
-        selectedFile = pdfInput.files[0];
-        fileName.textContent = selectedFile.name;
-        fileSize.textContent = formatFileSize(selectedFile.size);
-
-        if (selectedFile.size > MAX_FILE_SIZE_BYTES) {
-          showStatus('⚠️ Ce fichier dépasse la limite de 50 Mo. Essaie un PDF plus léger (par exemple en le divisant en plusieurs parties).', 'error');
-          analyzeBtn.style.display = 'none';
-          selectedFile = null;
-        } else {
-          analyzeBtn.style.display = 'block';
-        }
-      } else {
-        selectedFile = null;
-        fileName.textContent = 'Aucun fichier sélectionné';
-        fileSize.textContent = '';
-        analyzeBtn.style.display = 'none';
-      }
+      if (pdfInput.files.length) handleSelectedFile(pdfInput.files[0]);
     });
 
-    const langButtons = document.querySelectorAll('.lang-btn');
-    langButtons.forEach(btn => {
+    ['dragover', 'dragenter'].forEach(evt => {
+      dropzone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+      });
+    });
+    ['dragleave', 'dragend'].forEach(evt => {
+      dropzone.addEventListener(evt, () => dropzone.classList.remove('dragover'));
+    });
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      if (e.dataTransfer.files.length) handleSelectedFile(e.dataTransfer.files[0]);
+    });
+
+    document.querySelectorAll('.lang-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        langButtons.forEach(b => b.classList.remove('selected'));
+        document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
         selectedLang = btn.dataset.lang;
+        if (selectedFile) updateFileMetaSub(langLabelFor(selectedLang));
       });
     });
 
@@ -480,14 +752,18 @@
       }
     }
 
+    // ---------- Onglets ----------
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+
     // ---------- Quiz interactif ----------
-    const quizState = {
-      questions: [],
-      index: 0,
-      score: 0,
-      selectedIndex: null,
-      answered: false
-    };
+    const quizState = { questions: [], index: 0, score: 0, selectedIndex: null, answered: false };
     const qcmTab = document.getElementById('tab-qcm');
     const letters = ['A', 'B', 'C', 'D'];
 
@@ -501,9 +777,7 @@
     function findCorrectIndex(q) {
       const options = q.options || [];
       let idx = options.findIndex(o => o.trim() === (q.reponse || '').trim());
-      if (idx === -1) {
-        idx = options.findIndex(o => o.trim().includes((q.reponse || '').trim()));
-      }
+      if (idx === -1) idx = options.findIndex(o => o.trim().includes((q.reponse || '').trim()));
       return idx === -1 ? 0 : idx;
     }
 
@@ -514,14 +788,22 @@
 
       const total = quizState.questions.length;
       if (total === 0) {
-        qcmTab.appendChild(createTextEl('div', 'Aucun QCM disponible.'));
+        qcmTab.appendChild(createTextEl('div', 'Aucun QCM disponible.', 'content-card'));
         return;
       }
 
       const q = quizState.questions[quizState.index];
       const correctIndex = findCorrectIndex(q);
 
-      qcmTab.appendChild(createTextEl('div', `Question ${quizState.index + 1}/${total}`, 'quiz-progress'));
+      const track = document.createElement('div');
+      track.className = 'quiz-progress-track';
+      const fill = document.createElement('div');
+      fill.className = 'quiz-progress-fill';
+      fill.style.width = Math.round((quizState.index / total) * 100) + '%';
+      track.appendChild(fill);
+      qcmTab.appendChild(track);
+
+      qcmTab.appendChild(createTextEl('div', `Question ${quizState.index + 1} / ${total}`, 'quiz-progress-label'));
       qcmTab.appendChild(createTextEl('div', q.question || '', 'quiz-question'));
 
       const optionButtons = [];
@@ -529,12 +811,8 @@
         const btn = document.createElement('button');
         btn.className = 'quiz-option';
         btn.type = 'button';
-
-        const letterSpan = createTextEl('span', letters[i] || '', 'quiz-option-letter');
-        const textSpan = createTextEl('span', optionText);
-
-        btn.appendChild(letterSpan);
-        btn.appendChild(textSpan);
+        btn.appendChild(createTextEl('span', letters[i] || '', 'quiz-option-letter'));
+        btn.appendChild(createTextEl('span', optionText));
 
         btn.addEventListener('click', () => {
           if (quizState.answered) return;
@@ -549,7 +827,7 @@
       });
 
       const validateBtn = document.createElement('button');
-      validateBtn.className = 'quiz-action-btn quiz-validate-btn';
+      validateBtn.className = 'primary-btn';
       validateBtn.textContent = 'Valider';
       validateBtn.disabled = true;
 
@@ -568,14 +846,12 @@
 
         const resultLabel = createTextEl(
           'div',
-          isCorrect ? '✅ Bonne réponse !' : '❌ Mauvaise réponse',
+          isCorrect ? '✅ Bonne réponse' : '❌ Mauvaise réponse',
           'quiz-result-label ' + (isCorrect ? 'correct' : 'incorrect')
         );
 
-        const explanationBox = createTextEl('div', q.explication || '', 'quiz-explanation');
-
         const nextBtn = document.createElement('button');
-        nextBtn.className = 'quiz-action-btn quiz-next-btn';
+        nextBtn.className = 'primary-btn';
         nextBtn.textContent = (quizState.index + 1 < total) ? 'Question suivante' : 'Voir mon score';
         nextBtn.addEventListener('click', () => {
           if (quizState.index + 1 < total) {
@@ -588,9 +864,10 @@
 
         validateBtn.remove();
         qcmTab.appendChild(resultLabel);
-        if (q.explication) qcmTab.appendChild(explanationBox);
+        if (q.explication) {
+          qcmTab.appendChild(createTextEl('div', q.explication, 'quiz-explanation'));
+        }
         qcmTab.appendChild(nextBtn);
-
         renderMathIn(qcmTab);
       });
 
@@ -615,75 +892,121 @@
       screen.appendChild(createTextEl('div', message, 'quiz-score-message'));
 
       const restartBtn = document.createElement('button');
-      restartBtn.className = 'quiz-action-btn quiz-restart-btn';
+      restartBtn.className = 'primary-btn';
       restartBtn.textContent = 'Refaire le QCM';
       restartBtn.addEventListener('click', () => initQuiz(quizState.questions));
-
       screen.appendChild(restartBtn);
+
       qcmTab.appendChild(screen);
     }
-    // ---------- Fin quiz interactif ----------
 
+    // ---------- Flashcards interactives ----------
+    const fcState = { cards: [], index: 0, flipped: false };
+    const fcTab = document.getElementById('tab-flashcards');
+
+    function initFlashcards(cards) {
+      fcState.cards = cards || [];
+      fcState.index = 0;
+      renderFlashcard();
+    }
+
+    function renderFlashcard() {
+      fcTab.innerHTML = '';
+      fcState.flipped = false;
+
+      const total = fcState.cards.length;
+      if (total === 0) {
+        fcTab.appendChild(createTextEl('div', 'Aucune flashcard disponible.', 'content-card'));
+        return;
+      }
+
+      const card = fcState.cards[fcState.index];
+
+      fcTab.appendChild(createTextEl('div', `${fcState.index + 1} / ${total}`, 'fc-progress-label'));
+
+      const scene = document.createElement('div');
+      scene.className = 'flashcard-scene';
+      const flip = document.createElement('div');
+      flip.className = 'flashcard';
+
+      const front = createTextEl('div', card.question || '', 'flashcard-face flashcard-face-front');
+      const back = createTextEl('div', card.reponse || '', 'flashcard-face flashcard-face-back');
+      flip.appendChild(front);
+      flip.appendChild(back);
+      flip.addEventListener('click', () => {
+        fcState.flipped = !fcState.flipped;
+        flip.classList.toggle('flipped', fcState.flipped);
+      });
+
+      scene.appendChild(flip);
+      fcTab.appendChild(scene);
+      fcTab.appendChild(createTextEl('div', 'Appuie sur la carte pour voir la réponse', 'flashcard-hint'));
+
+      const navRow = document.createElement('div');
+      navRow.className = 'fc-nav-row';
+
+      const prevBtn = document.createElement('button');
+      prevBtn.className = 'fc-nav-btn';
+      prevBtn.textContent = '← Précédent';
+      prevBtn.disabled = fcState.index === 0;
+      prevBtn.addEventListener('click', () => {
+        if (fcState.index > 0) { fcState.index--; renderFlashcard(); }
+      });
+
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'fc-nav-btn';
+      nextBtn.textContent = 'Suivant →';
+      nextBtn.disabled = fcState.index >= total - 1;
+      nextBtn.addEventListener('click', () => {
+        if (fcState.index < total - 1) { fcState.index++; renderFlashcard(); }
+      });
+
+      navRow.appendChild(prevBtn);
+      navRow.appendChild(nextBtn);
+      fcTab.appendChild(navRow);
+
+      renderMathIn(fcTab);
+    }
+
+    // ---------- Résultats ----------
     function renderResults(data, textWasTruncated) {
       document.getElementById('tab-resume').textContent = data.resume || '';
       document.getElementById('tab-fiche').textContent = data.fiche || '';
 
-      const fcEl = document.getElementById('tab-flashcards');
-      fcEl.innerHTML = '';
-      (data.flashcards || []).forEach((f, i) => {
-        const item = document.createElement('div');
-        item.className = 'fc-item';
-        item.appendChild(createTextEl('div', `${i + 1}. ${f.question}`, 'fc-question'));
-        item.appendChild(createTextEl('div', f.reponse, 'fc-reponse'));
-        fcEl.appendChild(item);
-      });
-
       initQuiz(data.qcm || []);
+      initFlashcards(data.flashcards || []);
 
-      resultsBox.style.display = 'block';
+      resultsBox.hidden = false;
 
       renderMathIn(document.getElementById('tab-resume'));
       renderMathIn(document.getElementById('tab-fiche'));
-      renderMathIn(fcEl);
 
       const wasTruncated = textWasTruncated || data.truncatedByServer;
       if (wasTruncated) {
         showStatus('✅ Contenu généré avec succès. ℹ️ Ton cours est très long : seule une partie a été analysée pour cette version.', 'info');
       } else {
-        showStatus('✅ Contenu généré avec succès.');
+        showStatus('✅ Contenu généré avec succès.', 'success');
       }
     }
 
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-      });
-    });
-
+    // ---------- Analyse ----------
     analyzeBtn.addEventListener('click', async () => {
-      if (!selectedFile) return;
+      if (!selectedFile || !loadedPdfDoc) return;
 
       analyzeBtn.disabled = true;
       loadingBox.style.display = 'flex';
       loadingText.textContent = 'Lecture du PDF en cours…';
-      statusBox.style.display = 'none';
-      statusBox.classList.remove('error', 'info');
-      resultsBox.style.display = 'none';
+      hideStatus();
+      resultsBox.hidden = true;
 
       try {
-        const arrayBuffer = await selectedFile.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
         let fullText = '';
-        for (let i = 1; i <= pdf.numPages; i++) {
-          loadingText.textContent = `Lecture de la page ${i}/${pdf.numPages}…`;
-          const page = await pdf.getPage(i);
+        const numPages = loadedPdfDoc.numPages;
+        for (let i = 1; i <= numPages; i++) {
+          loadingText.textContent = `Lecture de la page ${i}/${numPages}…`;
+          const page = await loadedPdfDoc.getPage(i);
           const content = await page.getTextContent();
-          const pageText = content.items.map(item => item.str).join(' ');
-          fullText += pageText + '\n\n';
+          fullText += content.items.map(item => item.str).join(' ') + '\n\n';
         }
 
         let textWasTruncated = false;
@@ -701,10 +1024,7 @@
         });
 
         const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Erreur inconnue');
-        }
+        if (!response.ok) throw new Error(data.error || 'Erreur inconnue');
 
         renderResults(data, textWasTruncated);
       } catch (err) {
