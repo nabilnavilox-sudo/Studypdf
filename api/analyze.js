@@ -42,7 +42,14 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ni après, sans 
   ]
 }
 
-Génère exactement 10 éléments dans "qcm" et exactement 10 éléments dans "flashcards". Tout le contenu doit être en ${langLabel}.`;
+Génère exactement 10 éléments dans "qcm" et exactement 10 éléments dans "flashcards". Tout le contenu doit être en ${langLabel}.
+
+RÈGLE IMPORTANTE POUR LES MATHÉMATIQUES :
+Chaque fois qu'une expression mathématique apparaît (formule, fraction, indice, exposant, racine, équation, symbole), tu dois l'écrire en notation LaTeX, jamais en texte brut.
+- Pour une formule courte insérée dans une phrase : entoure-la de signes dollar simples, exemple : $x^2 + y^2 = z^2$
+- Pour une formule importante isolée : entoure-la de doubles signes dollar, exemple : $$c(t_{1/2}) = x_{max}$$
+- N'écris jamais une formule sous forme de texte brut comme "c(t1/2)=x_max" ou "x_max" : utilise toujours $c(t_{1/2}) = x_{max}$.
+- Attention : dans le JSON, chaque backslash LaTeX (comme \\frac, \\sqrt) doit être échappé correctement (double backslash) pour rester un JSON valide.`;
 
   try {
     const geminiRes = await fetch(
@@ -70,6 +77,14 @@ Génère exactement 10 éléments dans "qcm" et exactement 10 éléments dans "f
 
     // Nettoyage au cas où l'IA aurait ajouté des balises ```json
     rawText = rawText.trim().replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
+
+    // Filet de sécurité : si du texte reste avant/après le JSON, on isole
+    // uniquement la portion entre la première "{" et la dernière "}".
+    const firstBrace = rawText.indexOf('{');
+    const lastBrace = rawText.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      rawText = rawText.slice(firstBrace, lastBrace + 1);
+    }
 
     let parsed;
     try {
