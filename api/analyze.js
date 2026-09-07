@@ -17,8 +17,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Le texte du document est vide.' });
     }
 
-    const primaryModel = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
-    const fallbackModel = 'gemini-2.5-flash';
+    const modelName = 'gemini-3.6-flash';
 
     const langInstruction = {
       fr: 'Rédige TOUT le contenu impérativement en FRANÇAIS.',
@@ -55,48 +54,38 @@ Structure JSON exacte attendue :
 Génère au moins 5 questions QCM et au moins 5 flashcards.
 N'ajoute aucun texte avant ou après le JSON.`;
 
-    const callGeminiAPI = async (modelName) => {
-      const url = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`;
-      
-      const payload = {
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              { text: systemPrompt },
-              { text: `\n\nCONTENU DU COURS :\n${text}` }
-            ]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.3,
-          responseMimeType: 'application/json'
+    const url = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`;
+    
+    const payload = {
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            { text: systemPrompt },
+            { text: `\n\nCONTENU DU COURS :\n${text}` }
+          ]
         }
-      };
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error?.message || `Erreur API Google (${response.status})`);
+      ],
+      generationConfig: {
+        temperature: 0.3,
+        responseMimeType: 'application/json'
       }
-
-      return await response.json();
     };
 
-    let geminiResponse;
-    try {
-      geminiResponse = await callGeminiAPI(primaryModel);
-    } catch (primaryErr) {
-      console.warn(`Échec avec le modèle ${primaryModel}, tentative avec ${fallbackModel}...`, primaryErr.message);
-      geminiResponse = await callGeminiAPI(fallbackModel);
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error?.message || `Erreur API Google (${response.status})`);
     }
 
+    const geminiResponse = await response.json();
     const rawContent = geminiResponse?.candidates?.[0]?.content?.parts?.[0]?.text;
+    
     if (!rawContent) {
       throw new Error("L'IA n'a pas renvoyé de réponse exploitable.");
     }
