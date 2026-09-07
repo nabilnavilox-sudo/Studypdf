@@ -35,7 +35,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ni après, sans 
   "resume": "un résumé clair et structuré du cours, en ${langLabel}",
   "fiche": "une fiche de révision structurée avec les points clés, en ${langLabel}",
   "qcm": [
-    { "question": "...", "options": ["...", "...", "...", "..."], "reponse": "..." }
+    { "question": "...", "options": ["...", "...", "...", "..."], "reponse": "...", "explication": "..." }
   ],
   "flashcards": [
     { "question": "...", "reponse": "..." }
@@ -44,8 +44,12 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ni après, sans 
 
 Génère exactement 10 éléments dans "qcm" et exactement 10 éléments dans "flashcards". Tout le contenu doit être en ${langLabel}.
 
+Pour chaque élément de "qcm" :
+- "reponse" doit être recopiée EXACTEMENT telle qu'elle apparaît dans "options" (même texte, même formulation).
+- "explication" doit être une courte explication (1 à 2 phrases) de pourquoi cette réponse est correcte.
+
 RÈGLE IMPORTANTE POUR LES MATHÉMATIQUES :
-Chaque fois qu'une expression mathématique apparaît (formule, fraction, indice, exposant, racine, équation, symbole), tu dois l'écrire en notation LaTeX, jamais en texte brut.
+Chaque fois qu'une expression mathématique apparaît (formule, fraction, indice, exposant, racine, équation, symbole), tu dois l'écrire en notation LaTeX, jamais en texte brut. Cela s'applique aussi bien à "resume", "fiche", "question", "options", "reponse" qu'à "explication".
 - Pour une formule courte insérée dans une phrase : entoure-la de signes dollar simples, exemple : $x^2 + y^2 = z^2$
 - Pour une formule importante isolée : entoure-la de doubles signes dollar, exemple : $$c(t_{1/2}) = x_{max}$$
 - N'écris jamais une formule sous forme de texte brut comme "c(t1/2)=x_max" ou "x_max" : utilise toujours $c(t_{1/2}) = x_{max}$.
