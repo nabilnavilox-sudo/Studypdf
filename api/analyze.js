@@ -29,7 +29,7 @@ module.exports = async function handler(req, res) {
 ${truncatedText}
 """
 
-Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ni après, sans balises markdown, respectant exactement cette structure :
+Réponds UNIQUEMENT avec un objet JSON valide respectant exactement cette structure :
 
 {
   "resume": "un résumé clair et structuré du cours, en ${langLabel}",
@@ -53,7 +53,7 @@ Chaque fois qu'une expression mathématique apparaît (formule, fraction, indice
 - Pour une formule courte insérée dans une phrase : entoure-la de signes dollar simples, exemple : $x^2 + y^2 = z^2$
 - Pour une formule importante isolée : entoure-la de doubles signes dollar, exemple : $$c(t_{1/2}) = x_{max}$$
 - N'écris jamais une formule sous forme de texte brut comme "c(t1/2)=x_max" ou "x_max" : utilise toujours $c(t_{1/2}) = x_{max}$.
-- Attention : dans le JSON, chaque backslash LaTeX (comme \\frac, \\sqrt) doit être échappé correctement (double backslash) pour rester un JSON valide.`;
+- Reste concis dans "resume" et "fiche" (quelques paragraphes maximum) pour ne pas dépasser la limite de longueur de réponse.`;
 
   try {
     const geminiRes = await fetch(
@@ -66,6 +66,10 @@ Chaque fois qu'une expression mathématique apparaît (formule, fraction, indice
         },
         body: JSON.stringify({
           contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            maxOutputTokens: 8192,
+          },
         }),
       }
     );
@@ -77,13 +81,14 @@ Chaque fois qu'une expression mathématique apparaît (formule, fraction, indice
     }
 
     const data = await geminiRes.json();
-    let rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-    // Nettoyage au cas où l'IA aurait ajouté des balises ```json
+    const candidate = data?.candidates?.[0];
+    const finishReason = candidate?.finishReason;
+    let rawText = candidate?.content?.parts?.[0]?.text || '';
+
+    // Filet de sécurité au cas où le mode JSON strict ajouterait quand même des balises
     rawText = rawText.trim().replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
 
-    // Filet de sécurité : si du texte reste avant/après le JSON, on isole
-    // uniquement la portion entre la première "{" et la dernière "}".
     const firstBrace = rawText.indexOf('{');
     const lastBrace = rawText.lastIndexOf('}');
     if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
@@ -94,7 +99,10 @@ Chaque fois qu'une expression mathématique apparaît (formule, fraction, indice
     try {
       parsed = JSON.parse(rawText);
     } catch (e) {
-      res.status(502).json({ error: "La réponse de l'IA n'était pas un JSON valide." });
+      const hint = finishReason === 'MAX_TOKENS'
+        ? " La réponse a été coupée car elle était trop longue (cours probablement très volumineux)."
+        : '';
+      res.status(502).json({ error: "La réponse de l'IA n'était pas un JSON valide." + hint });
       return;
     }
 
