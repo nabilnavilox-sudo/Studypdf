@@ -20,8 +20,10 @@ module.exports = async function handler(req, res) {
   const langNames = { fr: 'français', ar: 'arabe standard', darija: 'darija marocain (arabe dialectal, transcrit en lettres arabes)' };
   const langLabel = langNames[lang] || 'français';
 
-  // On limite la taille du texte envoyé pour rester rapide et économique
-  const truncatedText = text.slice(0, 15000);
+  // Limite de sécurité côté serveur (le client tronque déjà en amont,
+  // ceci est un filet de sécurité supplémentaire).
+  const MAX_CHARS = 40000;
+  const truncatedText = text.slice(0, MAX_CHARS);
 
   const prompt = `Tu es un assistant pédagogique. Voici le texte extrait d'un cours (peut contenir des imperfections d'extraction) :
 
@@ -86,7 +88,6 @@ Chaque fois qu'une expression mathématique apparaît (formule, fraction, indice
     const finishReason = candidate?.finishReason;
     let rawText = candidate?.content?.parts?.[0]?.text || '';
 
-    // Filet de sécurité au cas où le mode JSON strict ajouterait quand même des balises
     rawText = rawText.trim().replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
 
     const firstBrace = rawText.indexOf('{');
@@ -105,6 +106,9 @@ Chaque fois qu'une expression mathématique apparaît (formule, fraction, indice
       res.status(502).json({ error: "La réponse de l'IA n'était pas un JSON valide." + hint });
       return;
     }
+
+    // Indique au client si le texte original était plus long que ce qu'on a envoyé à l'IA
+    parsed.truncatedByServer = text.length > MAX_CHARS;
 
     res.status(200).json(parsed);
   } catch (err) {
