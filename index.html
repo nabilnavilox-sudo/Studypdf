@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>StudyPDF</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -272,6 +273,8 @@
   <div class="footer-note">Version prototype — StudyPDF</div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
@@ -321,37 +324,64 @@
       });
     });
 
+    // Crée un <li> avec du texte brut (jamais interprété comme du HTML)
+    function createTextEl(tag, text, className) {
+      const el = document.createElement(tag);
+      if (className) el.className = className;
+      el.textContent = text;
+      return el;
+    }
+
     function renderResults(data) {
+      // Résumé et fiche : texte brut, jamais de HTML injecté
       document.getElementById('tab-resume').textContent = data.resume || '';
       document.getElementById('tab-fiche').textContent = data.fiche || '';
 
+      // QCM : construction via DOM + textContent, pas d'innerHTML sur le contenu IA
       const qcmEl = document.getElementById('tab-qcm');
       qcmEl.innerHTML = '';
       (data.qcm || []).forEach((q, i) => {
-        const div = document.createElement('div');
-        div.className = 'qcm-item';
-        const optionsHtml = (q.options || []).map(o => `<li>${o}</li>`).join('');
-        div.innerHTML = `
-          <div class="qcm-question">${i + 1}. ${q.question}</div>
-          <ul class="qcm-options">${optionsHtml}</ul>
-          <div class="qcm-reponse">Réponse : ${q.reponse}</div>
-        `;
-        qcmEl.appendChild(div);
+        const item = document.createElement('div');
+        item.className = 'qcm-item';
+
+        item.appendChild(createTextEl('div', `${i + 1}. ${q.question}`, 'qcm-question'));
+
+        const ul = document.createElement('ul');
+        ul.className = 'qcm-options';
+        (q.options || []).forEach(o => {
+          ul.appendChild(createTextEl('li', o));
+        });
+        item.appendChild(ul);
+
+        item.appendChild(createTextEl('div', 'Réponse : ' + q.reponse, 'qcm-reponse'));
+        qcmEl.appendChild(item);
       });
 
+      // Flashcards : idem, texte brut sécurisé
       const fcEl = document.getElementById('tab-flashcards');
       fcEl.innerHTML = '';
       (data.flashcards || []).forEach((f, i) => {
-        const div = document.createElement('div');
-        div.className = 'fc-item';
-        div.innerHTML = `
-          <div class="fc-question">${i + 1}. ${f.question}</div>
-          <div class="fc-reponse">${f.reponse}</div>
-        `;
-        fcEl.appendChild(div);
+        const item = document.createElement('div');
+        item.className = 'fc-item';
+        item.appendChild(createTextEl('div', `${i + 1}. ${f.question}`, 'fc-question'));
+        item.appendChild(createTextEl('div', f.reponse, 'fc-reponse'));
+        fcEl.appendChild(item);
       });
 
       resultsBox.style.display = 'block';
+
+      // Rendu des formules mathématiques (KaTeX) sur l'ensemble des résultats.
+      // Le texte reste du texte brut (sécurisé) ; KaTeX transforme uniquement
+      // les portions $...$ et $$...$$ en formules visuelles.
+      if (window.renderMathInElement) {
+        renderMathInElement(resultsBox, {
+          delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '$', right: '$', display: false }
+          ],
+          throwOnError: false
+        });
+      }
     }
 
     document.querySelectorAll('.tab-btn').forEach(btn => {
